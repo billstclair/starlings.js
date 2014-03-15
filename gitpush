@@ -1,0 +1,4 @@
+#!/bin/bash
+
+rsyncit -av --exclude ".git" .
+git push origin master

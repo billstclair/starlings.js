@@ -1,0 +1,70 @@
+<html>
+<!-- Distributed under the BSD 2-Clause License. See end of file. -->
+<head>
+  <!--<link rel='stylesheet' type='text/css' href='css/style.css'>-->
+  <script src='js/jquery.js'></script>
+  <script src='js/starlings.js'></script>
+  <title>Starling Simulator</title>
+  <meta name='viewport' content='width=720'/>
+  <script>
+
+var canvas;
+
+function init() {
+  canvas = $('#canvas')[0];
+  starlings.init(canvas);
+  starlings.reset();
+}
+  </script>
+</head>
+<body onload='init();'>
+  <center>
+    <h2>A Murmuration of Starlings</h2>
+    <table>
+      <tr>
+        <td>
+          <center>
+            <canvas id='canvas' style='border: 1px solid;' width='600' height='600'>
+            </canvas>
+          </center>
+        </td>
+      </tr>
+    </table>
+  <p style='font-size: 80%;'>
+    Copyright (c) 2014 Bill St. Clair<br/>
+    All rights reserved<br/>
+    Distrbuted under the <a href='license.txt'>BSD 2-Clause License</a>
+  </p>
+  </center>
+<body>
+<!--------------------------------------------------------------------
+  --
+  -- Copyright (c) 2014, Bill St. Clair <bill@billstclair.com>
+  -- All rights reserved.
+  -- Distributed under the BSD 2-Clause License
+  -- 
+  -- Redistribution and use in source and binary forms, with or without
+  -- modification, are permitted provided that the following conditions are
+  -- met:
+  -- 
+  -- 1. Redistributions of source code must retain the above copyright
+  -- notice, this list of conditions and the following disclaimer.
+  -- 
+  -- 2. Redistributions in binary form must reproduce the above copyright
+  -- notice, this list of conditions and the following disclaimer in the
+  -- documentation and/or other materials provided with the distribution.
+  -- 
+  -- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  -- "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  -- LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+  -- A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+  -- HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  -- SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  -- LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  -- DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+  -- THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  -- (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  --
+  --------------------------------------------------------------------->
+</html>

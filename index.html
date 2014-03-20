@@ -13,10 +13,19 @@ function log(x) {
   console.log(x);
 }
 
+function timeit(thunk) {
+  var d = new Date();
+  var t = d.getTime();
+  thunk();
+  d = new Date();
+  return d.getTime() - t;
+}
+
 function init() {
   canvas = $('#canvas')[0];
   starlings.init(canvas);
   starlings.reset();
+  starlings.draw();
 }
   </script>
 </head>

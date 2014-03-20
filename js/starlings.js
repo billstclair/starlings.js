@@ -15,7 +15,7 @@ var starlings = {};
   var canvas;
   var width;
   var height;
-  var count = 10;
+  var count = 100;
   var leaderCount = 1;
   var birds;
   var bytype;
@@ -154,6 +154,41 @@ var starlings = {};
       xzPerspective(eyePos, {x: birdPos.x, y: birdPos.y+(birdSize/2), z: birdPos.z});
     
     return {x: pos.y-minY, y: height-(pos.z-minZ), r: edgePos.y-pos.y};
+  }
+
+  function perspectiveToScreen(p) {
+    var p = {x: p.y-minY, y: height-(p.z-minZ)};
+    return p;
+  }
+
+  starlings.draw = draw;
+  function draw() {
+    var ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = 'lightblue';
+    var twopi = 2*Math.PI;
+
+    ctx.strokeStyle = 'lightgray';
+    ctx.beginPath();
+    var p1 = perspectiveToScreen(xzPerspective(eyePos, {x:minX, y:minY, z:0}));
+    ctx.moveTo(p1.x, p1.y);
+    var p = perspectiveToScreen(xzPerspective(eyePos, {x:maxX, y:minY, z:0}));
+    ctx.lineTo(p.x, p.y);
+    p = perspectiveToScreen(xzPerspective(eyePos, {x:maxX, y:maxY, z:0}));
+    ctx.lineTo(p.x, p.y);
+    p = perspectiveToScreen(xzPerspective(eyePos, {x:minX, y:maxY, z:0}));
+    ctx.lineTo(p.x, p.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.stroke();
+
+    ctx.beginPath();
+    for (var i in birds) {
+      var bird = birds[i];
+      var pos = birdDisplayPos(bird);
+      ctx.moveTo(pos.x, pos.y);
+      ctx.arc(pos.x, pos.y, pos.r, 0, twopi);
+    }
+    ctx.fill();
   }
 
   // State accessors

@@ -38,6 +38,8 @@ var starlings = {};
   var minV;
   var maxV;
 
+  var minBirdZ;                 // altitudes below this cause landing
+
   // Initialize the canvas and sizes that depend on it
   starlings.init = init;
   function init(theCanvas) {
@@ -53,6 +55,7 @@ var starlings = {};
     maxY = width/2;
     minZ = -height/10;
     maxZ = height+minZ;
+    minBirdZ = height/10;
     minV = 1;
     maxV = width/10;
   }
@@ -142,6 +145,14 @@ var starlings = {};
     return {y:y, z:z};
   }
 
+  // Return the 2d point, in display coordinates to display the 3d point p.
+  starlings.pointDisplayPos = pointDisplayPos;
+  function pointDisplayPos(p) {
+    var pos = xzPerspective(eyePos, p);
+    return {x: pos.y-minY, y: height-(pos.z-minZ)};
+  }
+
+  // Return x/y/r to display bird at bird.pos
   starlings.birdDisplayPos = birdDisplayPos;
   function birdDisplayPos(bird) {
     if ($.isNumeric(bird)) {
@@ -149,46 +160,100 @@ var starlings = {};
       if (!bird) throw('Index out of range')
     }
     var birdPos = bird.pos;
-    var pos = xzPerspective(eyePos, birdPos);
-    var edgePos =
-      xzPerspective(eyePos, {x: birdPos.x, y: birdPos.y+(birdSize/2), z: birdPos.z});
-    
-    return {x: pos.y-minY, y: height-(pos.z-minZ), r: edgePos.y-pos.y};
+    var pos = pointDisplayPos(birdPos);
+    var edgePoint = {x: birdPos.x, y: birdPos.y+(birdSize/2), z: birdPos.z};
+    var edgePos = pointDisplayPos(edgePoint);
+    pos.r = edgePos.x - pos.x;
+    return pos;
   }
 
-  function perspectiveToScreen(p) {
-    var p = {x: p.y-minY, y: height-(p.z-minZ)};
-    return p;
-  }
-
+  // Draw the entire scene, including a square for the ground
   starlings.draw = draw;
   function draw() {
     var ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = 'lightblue';
     var twopi = 2*Math.PI;
 
     ctx.strokeStyle = 'lightgray';
     ctx.beginPath();
-    var p1 = perspectiveToScreen(xzPerspective(eyePos, {x:minX, y:minY, z:0}));
+    var p1 = pointDisplayPos({x:minX, y:minY, z:0});
     ctx.moveTo(p1.x, p1.y);
-    var p = perspectiveToScreen(xzPerspective(eyePos, {x:maxX, y:minY, z:0}));
+    var p = pointDisplayPos({x:maxX, y:minY, z:0});
     ctx.lineTo(p.x, p.y);
-    p = perspectiveToScreen(xzPerspective(eyePos, {x:maxX, y:maxY, z:0}));
+    p = pointDisplayPos({x:maxX, y:maxY, z:0});
     ctx.lineTo(p.x, p.y);
-    p = perspectiveToScreen(xzPerspective(eyePos, {x:minX, y:maxY, z:0}));
+    p = pointDisplayPos({x:minX, y:maxY, z:0});
     ctx.lineTo(p.x, p.y);
     ctx.lineTo(p1.x, p1.y);
     ctx.stroke();
 
-    ctx.beginPath();
+    for (var type in bytype) {
+      var typeTable = bytype[type];
+      var color = (type=='leader') ? 'red' : 'lightblue';
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      for (var i in typeTable) {
+        var bird = typeTable[i];
+        var pos = birdDisplayPos(bird);
+        ctx.moveTo(pos.x, pos.y);
+        ctx.arc(pos.x, pos.y, pos.r, 0, twopi);
+      }
+      ctx.fill();
+    }
+  }
+
+  // Step all the birds to the next position
+  // Does not redraw. Call starlings.draw() to do that.
+  starlings.step = step;
+  function step() {
+    for (var i in birds) {
+      stepBird(birds[i]);
+    }
     for (var i in birds) {
       var bird = birds[i];
-      var pos = birdDisplayPos(bird);
-      ctx.moveTo(pos.x, pos.y);
-      ctx.arc(pos.x, pos.y, pos.r, 0, twopi);
+      var nextPos = bird.nextPos;
+      if (nextPos) {
+        delete bird.nextPos;
+        bird.pos = nextPos;
+      }
     }
-    ctx.fill();
+  }
+
+  starlings.stepBird = stepBird;
+  function stepBird(bird) {
+    var pos = null;
+    var f = bird.stepFunction;
+    if (f) {
+      pos = f(bird);
+    } else if (bird.following) {
+      pos = followStep(bird, bird.following);
+    }
+    if (pos) {
+      bird.nextPos = pos;
+    }
+  }
+
+  function followStep(bird, following) {
+    // ** TO DO **
+    return null;
+  }
+
+  function millis() {
+    return (new Date()).getTime();
+  }
+
+  var maxGroundTime = 3;        // seconds
+
+  // Called when leader on the ground, and we're waiting to take off
+  function groundStep(bird) {
+    var takeoffTime = bird.takeoffTime;
+    if (!takeoffTime) {
+      var groundTime = Math.random() * maxGroundTime * 1000;
+      bird.takeoffTime = millis() + groundTime;
+    } else if (millis() >= bird.takeoffTime()) {
+      delete bird.takeoffTime;
+      // *** Continue here ***
+    }
   }
 
   // State accessors

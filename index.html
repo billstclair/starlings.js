@@ -9,6 +9,14 @@
   <script>
 var canvas;
 
+function err(x) {
+  if (x) {
+    $('#err').text(x);
+  } else {
+    $('#err').html('&nbsp;');
+  }
+}
+
 function log(x) {
   console.log(x);
 }
@@ -24,8 +32,35 @@ function timeit(thunk) {
 function init() {
   canvas = $('#canvas')[0];
   starlings.init(canvas);
-  starlings.reset();
+  reset();
+}
+
+var maxBirdCount = 1000;
+var minBirdCount = 10;
+var minLeaderCount = 1;
+
+function reset() {
+  err('');
+  birdCount = parseInt($('#birdCount').val());
+  if (isNaN(birdCount) || birdCount > maxBirdCount || birdCount < minBirdCount) {
+    err('Bird Count must be between ' + minBirdCount + ' and ' + maxBirdCount);
+    return;
+  }
+  leaderCount = $('#leaderCount').val();
+  if (isNaN(leaderCount) ||
+      leaderCount > birdCount || leaderCount < minLeaderCount) {
+    err('Leader Count must be between ' + minLeaderCount + ' and ' + birdCount);
+    return;
+  }
+  starlings.reset(birdCount, leaderCount);
   starlings.draw();
+}
+
+function resetKey(event) {
+  if (event.which == '\r'.charCodeAt(0)) {
+    event.preventDefault();
+    reset();
+  }
 }
   </script>
 </head>
@@ -42,9 +77,30 @@ function init() {
         </td>
       </tr>
     </table>
+  <table>
+    <tr>
+      <td colspan='2'>
+        <span id='err' style='color: red;'>&nbsp;</span>
+      </td>
+    </tr>
+    <tr>
+      <th style='text-align: center;'>Bird count:</th>
+      <td><input id='birdCount' type='text' value='100'
+                 onKeyDown='resetKey(event)'/>
+    </tr>
+    <tr>
+      <th style='text-align: center;'>Leader count:</th>
+      <td><input id='leaderCount' type='text' value='1'
+                 onKeyDown='resetKey(event)'/>
+    </tr>
+    <tr>
+      <td></td>
+      <td><input type='submit' onClick='reset();' value='Reset'/></td>
+    </tr>
+  </table>
+  </p>
   <p style='font-size: 80%;'>
-    Copyright (c) 2014 Bill St. Clair<br/>
-    All rights reserved<br/>
+    Copyright &copy; 2014 Bill St. Clair, All rights reserved<br/>
     Distrbuted under the <a href='LICENSE'>BSD 2-Clause License</a>
   </p>
   </center>

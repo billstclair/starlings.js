@@ -33,9 +33,81 @@ function init() {
   canvas = $('#canvas')[0];
   starlings.init(canvas);
   reset();
+  window.onblur = windowBlur;
+  window.onfocus = windowFocus;
 }
 
-var maxBirdCount = 1000;
+function millis() {
+  try {
+    return window.performance.now();
+  } catch (c) {
+    return (new Date()).getTime();
+  }
+}
+
+var millisPerRefresh = 100;     // 10 hz
+
+var running = false;
+
+function run() {
+  running = true;
+  $('#runButton').val('Stop');
+  dorun();
+}
+
+function stop() {
+  running = false;
+  $('#runButton').val('Run');
+}
+
+function toggleRun() {
+  if (running) {
+    stop();
+  } else {
+    run();
+  }
+}
+
+var totalTime = 0;
+var timeCount = 0;
+var avgCount = 1000 / millisPerRefresh;
+
+function updateAvg(t) {
+  totalTime += t;
+  timeCount++;
+  if (timeCount >= avgCount) {
+    var avg = Math.round(1000*totalTime/timeCount)/1000;
+    $('#avg').text(avg);
+    totalTime = 0;
+    timeCount = 0;
+  }
+}
+
+function dorun() {
+  if (!running) return;
+  var m = millis();
+  starlings.step();
+  starlings.draw();
+  var t = millis() - m;
+  updateAvg(t);
+  var delay = Math.max(1, millisPerRefresh-t);
+  window.setTimeout(dorun, delay);
+}
+
+var wasRunning = false;
+
+// Stop animation when window loses focus
+function windowBlur() {
+  wasRunning = running;
+  if (wasRunning) stop();
+}
+
+// Run animation when window regains focus, if it was on before losing it
+function windowFocus() {
+  if (wasRunning) run();
+}  
+
+var maxBirdCount = 10000;
 var minBirdCount = 10;
 var minLeaderCount = 1;
 
@@ -84,18 +156,24 @@ function resetKey(event) {
       </td>
     </tr>
     <tr>
-      <th style='text-align: center;'>Bird count:</th>
+      <th style='text-align: right;'>Bird count:</th>
       <td><input id='birdCount' type='text' value='100'
                  onKeyDown='resetKey(event)'/>
     </tr>
     <tr>
-      <th style='text-align: center;'>Leader count:</th>
+      <th style='text-align: right;'>Leader count:</th>
       <td><input id='leaderCount' type='text' value='1'
                  onKeyDown='resetKey(event)'/>
     </tr>
     <tr>
+      <th style='text-align: right;'>Avg time:</th>
+      <td><span id='avg'>0</span> milliseconds</td>
+    <tr>
       <td></td>
-      <td><input type='submit' onClick='reset();' value='Reset'/></td>
+      <td>
+        <input style='font-size: 200%;' type='submit' onClick='reset();' value='Reset'/>
+        <input style='font-size: 200%;' id='runButton' type='submit' onClick='toggleRun()' value='Run'/>
+      </td>
     </tr>
   </table>
   </p>

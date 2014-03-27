@@ -35,8 +35,11 @@ var starlings = {};
   var minZ = 0;
   var maxZ;
 
-  var minV;
-  var maxV;
+  var minSpeed = 1;
+  var maxSpeed;
+
+  var maxAcc = 1;
+  var maxVertAcc = 1;
 
   var minBirdZ;                 // altitudes below this cause landing
 
@@ -46,18 +49,18 @@ var starlings = {};
     canvas = theCanvas;
     width = canvas.width;
     height = canvas.height;
-    eyeX = -width;
-    eyeZ = height/20;
+    eyeX = -1.1*width;
+    eyeZ = height/10;
     eyePos = {x: eyeX, y: eyeY, z: eyeZ};
     minX = -width/2;
     maxX = width/2;
     minY = -width/2;
     maxY = width/2;
     minZ = -height/10;
-    maxZ = height+minZ;
-    minBirdZ = height/10;
-    minV = 1;
-    maxV = width/10;
+    maxZ = height-minZ;
+    minBirdZ = 0.1 * height;
+    maxBirdZ = 0.9 * height;
+    maxSpeed = width/10;
   }
 
   // Return a random number between max and min.
@@ -109,9 +112,11 @@ var starlings = {};
     for (var i=0; i<count; i++) {
       var bird = {i:i};
       birds[i] = bird;
-      type = "bird";
+      type = 'bird';
       if (i < leaderCount) {
-        type = "leader";
+        type = 'leader';
+        bird.stepFunction = groundStep;
+        bird.stepName = "groundStep";
       }
       bird.type = type;
       var typeTable = bytype[type];
@@ -124,7 +129,7 @@ var starlings = {};
       var y = random(maxY, minY);
       var z = 0;
       bird.pos = {x:x, y:y, z:z};
-      if (type != "leader") {
+      if (type != 'leader') {
         var closest = findClosestBird(bird);
         bird.following = closest;
       }
@@ -238,6 +243,7 @@ var starlings = {};
     return null;
   }
 
+  starlings.millis = millis;
   function millis() {
     return (new Date()).getTime();
   }
@@ -250,10 +256,71 @@ var starlings = {};
     if (!takeoffTime) {
       var groundTime = Math.random() * maxGroundTime * 1000;
       bird.takeoffTime = millis() + groundTime;
-    } else if (millis() >= bird.takeoffTime()) {
+    } else if (millis() >= takeoffTime) {
       delete bird.takeoffTime;
-      // *** Continue here ***
+      bird.vel = {x:0, y:0, z:1};
+      bird.targetSpeed = random(maxSpeed, minSpeed);
+      bird.targetZ = random(maxBirdZ, minBirdZ);
+      var ang = random(2*Math.PI);
+      bird.acc = {x:Math.sin(ang), y:Math.cos(ang)}
+      bird.stepFunction = leaderStep;
+      bird.stepName = 'leaderStep';
+      return leaderStep(bird);
     }
+    return null;
+  }
+
+  // Normal step function for leader
+  function leaderStep(bird) {
+    var acc = bird.acc;
+    var vel = bird.vel;
+    if (acc) {
+      vel.x += acc.x;
+      vel.y += acc.y;
+      targetSpeed = bird.targetSpeed;
+      var speed = Math.sqrt(vel.x*vel.x + vel.y*vel.y);
+      if (speed >= targetSpeed) {
+        acc = null;
+        delete bird.acc;
+        delete bird.targetSpeed;
+        var factor = Math.sqrt(0.5)*targetSpeed/speed;
+        vel.x *= factor;
+        vel.y *= factor;
+      }
+    }
+    var pos = bird.pos;
+    var newpos = {x:pos.x, y:pos.y, z:pos.z}
+    newpos.x += vel.x;
+    newpos.y += vel.y;
+    newpos.z += vel.z;
+    var targetZ = bird.targetZ;
+    if ($.isNumeric(targetZ)) {
+      var z = newpos.z;
+      if ((vel.z>0 && z>=targetZ) || (vel.z<0 && z<=targetZ)) {
+        delete bird.targetZ;
+        vel.z = 0;
+        newpos.z = targetZ;
+      }
+    }
+    function negateVel(i) {
+      vel[i] = -vel[i];
+      if (acc) acc[i] = -acc[i];
+    }
+    if (newpos.x < minX) {
+      newpos.x = minX;
+      negateVel('x');
+    } else if (newpos.x > maxX) {
+      newpos.x = maxX;
+      negateVel('x');
+    }
+    if (newpos.y < minY) {
+      newpos.y = minY;
+      negateVel('y');
+    } else if (newpos.y > maxY) {
+      newpos.y = maxY;
+      negateVel('y');
+    }
+    return newpos;
   }
 
   // State accessors

@@ -3,6 +3,7 @@
 <head>
   <!--<link rel='stylesheet' type='text/css' href='css/style.css'>-->
   <script src='js/jquery.js'></script>
+  <script src='js/jquery.cookie.js'></script>
   <script src='js/starlings.js'></script>
   <title>Starling Simulator</title>
   <meta name='viewport' content='width=720'/>
@@ -31,10 +32,26 @@ function timeit(thunk) {
 
 function init() {
   canvas = $('#canvas')[0];
+  var cnt = $.cookie('birdCount');
+  if (cnt) $('#birdCount').val(cnt);
+  cnt = $.cookie('leaderCount');
+  if (cnt) $('#leaderCount').val(cnt);
+  var back = $.cookie('runInBackground');
+  if (back) $('#runInBackground').prop('checked', true);
   starlings.init(canvas);
   reset();
   window.onblur = windowBlur;
   window.onfocus = windowFocus;
+}
+
+var cookieProperties = {expires: 1000};
+
+function runInBackground() {
+  if ($('#runInBackground').prop('checked')) {
+    $.cookie('runInBackground', 'checked', cookieProperties);
+  } else {
+    $.removeCookie('runInBackground', cookieProperties);
+  }
 }
 
 function millis() {
@@ -70,7 +87,7 @@ function toggleRun() {
 
 var totalTime = 0;
 var timeCount = 0;
-var avgCount = 1000 / millisPerRefresh;
+var avgCount = 1000 / millisPerRefresh; // update average once per second
 
 function updateAvg(t) {
   totalTime += t;
@@ -90,7 +107,7 @@ function dorun() {
   starlings.draw();
   var t = millis() - m;
   updateAvg(t);
-  var delay = Math.max(1, millisPerRefresh-t);
+  var delay = Math.max(10, millisPerRefresh/10, millisPerRefresh-t);
   window.setTimeout(dorun, delay);
 }
 
@@ -98,8 +115,12 @@ var wasRunning = false;
 
 // Stop animation when window loses focus
 function windowBlur() {
-  wasRunning = running;
-  if (wasRunning) stop();
+  if ($('#runInBackground').prop('checked')) {
+    wasRunning = false;
+  } else {
+    wasRunning = running;
+    if (wasRunning) stop();
+  }
 }
 
 // Run animation when window regains focus, if it was on before losing it
@@ -118,12 +139,16 @@ function reset() {
     err('Bird Count must be between ' + minBirdCount + ' and ' + maxBirdCount);
     return;
   }
-  leaderCount = $('#leaderCount').val();
+  leaderCount = parseInt($('#leaderCount').val());
   if (isNaN(leaderCount) ||
       leaderCount > birdCount || leaderCount < minLeaderCount) {
     err('Leader Count must be between ' + minLeaderCount + ' and ' + birdCount);
     return;
   }
+  $('#birdCount').val(birdCount);
+  $('#leaderCount').val(leaderCount);
+  $.cookie('birdCount', birdCount, cookieProperties);
+  $.cookie('leaderCount', leaderCount, cookieProperties);
   starlings.reset(birdCount, leaderCount);
   starlings.draw();
 }
@@ -168,6 +193,13 @@ function resetKey(event) {
     <tr>
       <th style='text-align: right;'>Avg time:</th>
       <td><span id='avg'>0</span> milliseconds</td>
+    <tr>
+      <th></th>
+      <td>
+        <input id='runInBackground' type='checkbox' onChange='runInBackground()'>
+        run in background
+      </td>
+    </tr>
     <tr>
       <td></td>
       <td>

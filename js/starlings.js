@@ -231,16 +231,73 @@ var starlings = {};
     if (f) {
       pos = f(bird);
     } else if (bird.following) {
-      pos = followStep(bird, bird.following);
+      pos = followStep(bird);
     }
     if (pos) {
       bird.nextPos = pos;
     }
   }
 
-  function followStep(bird, following) {
-    // ** TO DO **
-    return null;
+  function vecSum(v1, v2) {
+    return {x:v1.x+v2.x, y:v1.y+v2.y, z:v1.z+v2.z};
+  }
+
+  function vecDiff(v1, v2) {
+    return {x:v1.x-v2.x, y:v1.y-v2.y, z:v1.z-v2.z};
+  }
+
+  function vecAbs(v) {
+    return Math.sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
+  }
+
+  function vecScale(v, scale) {
+    return {x:v.x*scale, y:v.y*scale, z:v.z*scale};
+  }
+
+  var minFollowDistance = 2*birdSize;
+  var maxFollowDistance = 3*birdSize;
+
+  function wallBounce(newpos, vel, acc) {
+    function negateVel(i) {
+      vel[i] = -vel[i];
+      if (acc) acc[i] = -acc[i];
+    }
+    if (newpos.x < minX) {
+      newpos.x = minX;
+      negateVel('x');
+    } else if (newpos.x > maxX) {
+      newpos.x = maxX;
+      negateVel('x');
+    }
+    if (newpos.y < minY) {
+      newpos.y = minY;
+      negateVel('y');
+    } else if (newpos.y > maxY) {
+      newpos.y = maxY;
+      negateVel('y');
+    }
+  }
+
+  function followStep(bird) {
+    var following = bird.following;
+    if (!following) return null;
+    var followVel = following.vel;
+    if (!followVel) return null;
+    var pos = bird.pos;
+    var followPos = following.pos;
+    var dist = distance(pos, followPos);
+    var vel = bird.vel;
+    if (!vel) {
+      vel = bird.vel = {x:0, y:0, z:0};
+    }
+    // *** Calculate acc ***
+    acc = {x:0, y:0, z:0};
+
+    vel = vecSum(vel, acc);
+    newpos = vecSum(pos, vel);
+    wallBounce(newpos, vel);
+    bird.vel = vel;
+    return newpos;
   }
 
   starlings.millis = millis;
@@ -302,24 +359,7 @@ var starlings = {};
         newpos.z = targetZ;
       }
     }
-    function negateVel(i) {
-      vel[i] = -vel[i];
-      if (acc) acc[i] = -acc[i];
-    }
-    if (newpos.x < minX) {
-      newpos.x = minX;
-      negateVel('x');
-    } else if (newpos.x > maxX) {
-      newpos.x = maxX;
-      negateVel('x');
-    }
-    if (newpos.y < minY) {
-      newpos.y = minY;
-      negateVel('y');
-    } else if (newpos.y > maxY) {
-      newpos.y = maxY;
-      negateVel('y');
-    }
+    wallBounce(newpos, vel, acc);
     return newpos;
   }
 
